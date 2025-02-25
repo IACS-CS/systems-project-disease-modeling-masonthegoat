@@ -34,8 +34,9 @@ and not interacting with others in each round.
 
 
 export const defaultSimulationParameters = {
-  infectionChance: 50,
-  incubationPeriodRange: [1, 5] // Corrected property name
+  infectionChance: 50, incubationPeriod:[1,5]   // The range for inbu
+  //  -- you will also have to add inputs into your jsx file if you want
+  // your user to be able to change these parameters.
 };
 
 /* Creates your initial population. By default, we *only* track whether people
@@ -48,100 +49,81 @@ to add a property such as daysInfected which tracks how long they've been infect
 
 Similarily, if you wanted to track immunity, you would need a property that shows
 whether people are susceptible or immune (i.e. succeptibility or immunity) */
-/* Creates your initial population. 
-   We add the `daysInfected` and `incubationPeriod` properties to each person */
-   export const createPopulation = (size = 1600) => {
-    const population = [];
-    const sideSize = Math.sqrt(size);
-  
-    for (let i = 0; i < size; i++) {
-      population.push({
-        id: i,
-        x: (100 * (i % sideSize)) / sideSize, // X-coordinate within 100 units
-        y: (100 * Math.floor(i / sideSize)) / sideSize, // Y-coordinate scaled similarly
-        infected: false,
-        daysInfected: 0, // Track how many rounds they've been infected
-        incubationPeriod: 0, // The incubation period (random value between 1 and 5)
-      });
-    }
-  
-    // Infect patient zero
-    let patientZero = population[Math.floor(Math.random() * size)];
-    patientZero.infected = true;
-    patientZero.incubationPeriod = Math.floor(Math.random() * (defaultSimulationParameters.incubationPeriodRange[1] - defaultSimulationParameters.incubationPeriodRange[0] + 1)) + defaultSimulationParameters.incubationPeriodRange[0];
-  
-    return population;
-  };
-  
-  // Update an individual (checking for infection and incubation)
-  const updateIndividual = (person, contact, params) => {
-    // If the person is infected, increment their infection timer
-    if (person.infected) {
-      person.daysInfected++;
-      // If their infection period has passed, they can now infect others
-      if (person.daysInfected >= person.incubationPeriod) {
-        person.canInfect = true; // Now they can infect others
-      }
-    }
-  
-    // If the person is not yet infected but is in contact with an infected individual who has passed their incubation period
-    if (contact.infected && contact.daysInfected >= contact.incubationPeriod) {
-      if (Math.random() * 100 < params.infectionChance) {
-        if (!person.infected) {
-          person.newlyInfected = true;
-        }
-        person.infected = true;
-        person.incubationPeriod = Math.floor(Math.random() * (params.incubationPeriodRange[1] - params.incubationPeriodRange[0] + 1)) + params.incubationPeriodRange[0];
-        person.daysInfected = 0; // Reset their infection timer
-      }
-    }
-  };
-  
-  // Update the population (pairing random individuals and updating each round)
-  export const updatePopulation = (population, params) => {
-    // This logic pairs people with the next person in line
-    for (let i = 0; i < population.length; i++) {
-      let p = population[i];
-      let contact = population[(i + 1) % population.length];
-      updateIndividual(p, contact, params);
-    }
-    return population;
-  };
-  
-  // Compute simulation statistics (including tracking people who can infect others)
-  export const computeStatistics = (population, round) => {
-    let infected = 0;
-    let newlyInfected = 0;
-    let canInfect = 0; // Count people who can infect others
-  
-    for (let p of population) {
-      if (p.infected) {
-        infected += 1;
-        if (p.daysInfected >= p.incubationPeriod) {
-          canInfect += 1; // Only those who have passed their incubation period can infect
-        }
-      }
-      if (p.newlyInfected) {
-        newlyInfected += 1;
-      }
-    }
-  
-    const stats = { round, infected, newlyInfected, canInfect };
-    console.log("Statistics computed:", stats);
-    return stats;
-  
-  };
-// Main simulation loop
-const runSimulation = (rounds = 10) => {
-  let population = createPopulation();
-  let params = defaultSimulationParameters;
+export const createPopulation = (size = 1600) => {
+  const population = [];
+  const sideSize = Math.sqrt(size);
+  for (let i = 0; i < size; i++) {
+    population.push({
+      id: i,
+      x: (100 * (i % sideSize)) / sideSize, // X-coordinate within 100 units
+      y: (100 * Math.floor(i / sideSize)) / sideSize, // Y-coordinate scaled similarly
+      infected: false,
+    });
+  }
+  // Infect patient zero...
+  let patientZero = population[Math.floor(Math.random() * size)];
+  patientZero.infected = true;
+  return population;
+};
 
-  for (let round = 1; round <= rounds; round++) {
-    population = updatePopulation(population, params);
-    const stats = computeStatistics(population, round);
-    console.log(`Round ${round}:`, stats);
+// Example: Maybe infect a person (students should customize this)
+const updateIndividual = (person, contact, params) => {
+  // Add some logic to update the individual!
+  // For example...
+  if (person.infected) {
+    // If they were already infected, they are no longer
+    // newly infected :)
+    person.newlyInfected = false;
+  }
+  if (contact.infected) {
+    if (Math.random() * 100 < params.infectionChance) {
+      if (!person.infected) {
+        person.newlyInfected = true;
+      }
+      person.infected = true;
+    }
   }
 };
 
-// Run the simulation for 10 rounds
-runSimulation();
+// Example: Update population (students decide what happens each turn)
+export const updatePopulation = (population, params) => {
+  // Include "shufflePopulation if you want to shuffle...
+  // population = shufflePopulation(population);
+  // Example logic... each person is in contact with the person next to them...
+  for (let i = 0; i < population.length; i++) {
+    let p = population[i];
+    // This logic just grabs the next person in line -- you will want to 
+    // change this to fit your model! 
+    let contact = population[(i + 1) % population.length];
+    // Update the individual based on the contact...
+    updateIndividual(p, contact, params);
+  }
+  return population;
+};
+
+
+// Stats to track (students can add more)
+// Any stats you add here should be computed
+// by Compute Stats below
+export const trackedStats = [
+  { label: "Total Infected", value: "infected" },
+];
+
+
+
+
+// Example: Compute stats (students customize)
+export const computeStatistics = (population, round) => {
+  let infected = 0;
+  let newlyInfected = 0;
+  for (let p of population) {
+    if (p.infected) {
+      infected += 1; // Count the infected
+    }
+    if (p.newlyInfected) {
+      newlyInfected += 1; // Count the newly infected
+    }
+  }
+  return { round, infected, newlyInfected };
+};
+
