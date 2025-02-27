@@ -141,6 +141,7 @@ const Simulation = () => {
             {simulationParameters.infectionChance}%
           </label>
           <label>
+            
             Population:
             <div className="vertical-stack">
               {/* Population uses a "square" size to allow a UI that makes it easy to slide
