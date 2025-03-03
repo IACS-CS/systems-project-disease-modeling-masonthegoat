@@ -27,6 +27,10 @@ const renderPatients = (population) => {
       return "🤧"; // Sneezing Face for new cases
     } else if (p.infected) {
       return "🤢"; // Vomiting Face for already sick
+    } else if (p.immune) {
+      return "😷"; // Face with Medical Mask for immune
+    } else if (p.quarantined) {
+      return "🏠"; // House for quarantined
     } else {
       return "😀"; // Healthy person
     }
@@ -120,7 +124,93 @@ const Simulation = () => {
         <button onClick={resetSimulation}>Reset Simulation</button>
 
         <div>
-          {/* Add custom parameters here... */}
+        <label>
+            Infection Chance:
+            <input
+              type="range"
+              min="0"
+              max="100"
+              step="1"
+              value={simulationParameters.infectionChance}
+              onChange={(e) =>
+                setSimulationParameters({
+                  ...simulationParameters,
+                  infectionChance: parseFloat(e.target.value),
+                })
+              }
+            />
+            {simulationParameters.infectionChance}%
+          </label>
+          <label>
+            Incubation Period Range:
+            <input
+              type="range"
+              min="1"
+              max="5"
+              step="1"
+              value={simulationParameters.incubationPeriodRange[0]}
+              onChange={(e) =>
+                setSimulationParameters({
+                  ...simulationParameters,
+                  incubationPeriodRange: [
+                    parseInt(e.target.value),
+                    simulationParameters.incubationPeriodRange[1],
+                  ],
+                })
+              }
+            />
+            {simulationParameters.incubationPeriodRange[0]} -{" "}
+            {simulationParameters.incubationPeriodRange[1]} rounds
+          </label>
+          <label>
+            Quarantine Period:
+            <input
+              type="number"
+              value={simulationParameters.quarantinePeriod}
+              onChange={(e) =>
+                setSimulationParameters({
+                  ...simulationParameters,
+                  quarantinePeriod: parseInt(e.target.value),
+                })
+              }
+            />
+            {simulationParameters.quarantinePeriod} rounds
+          </label>
+          <label>
+            Immunity Chance:
+            <input
+              type="range"
+              min="0"
+              max="100"
+              step="1"
+              value={simulationParameters.immunityChance}
+              onChange={(e) =>
+                setSimulationParameters({
+                  ...simulationParameters,
+                  immunityChance: parseFloat(e.target.value),
+                })
+              }
+            />
+            {simulationParameters.immunityChance}%
+          </label>
+          <label>
+            Quarantine Chance:
+            <input
+              type="range"
+              min="0"
+              max="100"
+              step="1"
+              value={simulationParameters.quarantineChance}
+              onChange={(e) =>
+                setSimulationParameters({
+                  ...simulationParameters,
+                  quarantineChance: parseFloat(e.target.value),
+                })
+              }
+            />
+            {simulationParameters.quarantineChance}%
+          </label>
+        
           <label>
             Population:
             <div className="vertical-stack">

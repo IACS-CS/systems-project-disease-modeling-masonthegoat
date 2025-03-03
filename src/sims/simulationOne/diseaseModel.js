@@ -99,10 +99,15 @@ const updateIndividual = (person, contact, params) => {
 
 // Update the population (pairing random individuals and updating each round)
 export const updatePopulation = (population, params) => {
+  // Shuffle the population at the start of each round
+  population = shufflePopulation(population);
+
   // This logic pairs people with the next person in line
-  for (let i = 0; i < population.length; i++) {
+  for (let i = 0; i < population.length; i+= 2) {
     let p = population[i];
     let contact = population[(i + 1) % population.length];
+    contact.x = (p.x + 4) % 100;
+    contact.y = p.y;
     updateIndividual(p, contact, params);
   }
   console.log("Population updated:", population);
@@ -111,6 +116,7 @@ export const updatePopulation = (population, params) => {
 export const trackedStats = [
   { label: "Total Infected", value: "infected" },
 ];
+
 
 // Compute simulation statistics (including tracking people who can infect others)
 export const computeStatistics = (population, round) => {
