@@ -23,19 +23,22 @@ const renderPatients = (population) => {
   }
 
   function renderEmoji(p) {
+    if (p.quarantined) {
+      return "🏠"; // House for quarantined
+    }
+    if (p.immune) {
+      return "💉"; // Syringe for immune
+    }
     if (p.newlyInfected) {
       return "🤧"; // Sneezing Face for new cases
     } else if (p.infected) {
       return "🤢"; // Vomiting Face for already sick
-    } else if (p.immune) {
-      return "😷"; // Face with Medical Mask for immune
-    } else if (p.quarantined) {
-      return "🏠"; // House for quarantined
+    } else if (p.roundsInfected > 4) {
+      return "🤒"; // Sick face for long-term infected
     } else {
       return "😀"; // Healthy person
     }
   }
-
   function renderSubsetWarning() {
     if (amRenderingSubset) {
       return (
@@ -61,6 +64,7 @@ const renderPatients = (population) => {
             transform: `translate(${(p.x / 100) * boxSize}px, ${
               (p.y / 100) * boxSize
             }px)`,
+            color: p.infected ? "green" : "black", // Change color to green if infected
           }}
         >
           {renderEmoji(p)}
@@ -82,13 +86,18 @@ const Simulation = () => {
     defaultSimulationParameters
   );
 
-  // Runs a single simulation step
-  const runTurn = () => {
-    let newPopulation = updatePopulation([...population], simulationParameters);
-    setPopulation(newPopulation);
-    let newStats = computeStatistics(newPopulation, diseaseData.length);
-    setDiseaseData([...diseaseData, newStats]);
-  };
+    // Runs a single simulation step
+    const runTurn = () => {
+      let newPopulation = updatePopulation([...population], simulationParameters);
+      setPopulation(newPopulation);
+      let newStats = computeStatistics(newPopulation, diseaseData.length);
+      setDiseaseData([...diseaseData, newStats]);
+  
+      // Reset newlyInfected state after each round
+      newPopulation.forEach((p) => {
+        p.newlyInfected = false;
+      });
+    };
 
   // Resets the simulation
   const resetSimulation = () => {
@@ -106,11 +115,32 @@ const Simulation = () => {
   return (
     <div>
       <section className="top">
-        <h1>My Second Custom Simulation</h1>
+        <h1>The Flu Project</h1>
         <p>
-          Edit <code>simulationTwo/diseaseModel.js</code> to define how your
-          simulation works. This one should try to replicate features of a real
-          world illness and/or intervention.
+        Sure, here's a brief explanation of the key elements represented in your simulation:
+
+1. **Infection Spread**: The simulation models the spread of the flu with a 50% chance of getting infected when paired up with a sick person. This is controlled by the `infectionChance` parameter.
+
+2. **Incubation Period**: The simulation includes an incubation period, which is the time between exposure to the virus and the onset of symptoms. This period is randomly set between 1 and 2 rounds for each infected individual. During this period, the individual is infected but cannot infect others.
+
+3. **Quarantine Period**: After the incubation period, there is a quarantine period where infected individuals are isolated to prevent further spread. This period is set to 3 rounds by default.
+
+4. **Immunity**: There is a chance that an infected individual will become immune after recovering from the infection. This is controlled by the `immunityChance` parameter. Immune individuals are represented by a syringe emoji and cannot be infected again.
+
+5. **Quarantine Groups**: Infected individuals have a chance of being quarantined, which is controlled by the `quarantineChance` parameter. Quarantined individuals are represented by a house emoji and are isolated from the rest of the population.
+
+6. **Population Dynamics**: The simulation allows you to adjust the size of the population and observe how the disease spreads through different population sizes.
+
+7. **Visualization**: The simulation uses emojis to represent the different states of individuals:
+   - 😀: Healthy person
+   - 🤧: Newly infected person
+   - 🤢: Infected person
+   - 💉: Immune person
+   - 🏠: Quarantined person
+
+8. **Statistics Tracking**: The simulation tracks and displays statistics such as the total number of infected, newly infected, immune, and quarantined individuals over time.
+
+These elements together provide a comprehensive model of how the flu can spread through a population, the impact of quarantine and immunity, and how different parameters can affect the dynamics of the disease spread.
         </p>
 
         <p>

@@ -75,6 +75,7 @@ export const createPopulation = (size = 1600) => {
       id: i,
       x: (100 * (i % sideSize)) / sideSize, // X-coordinate within 100 units
       y: (100 * Math.floor(i / sideSize)) / sideSize, // Y-coordinate scaled similarly
+      infected: false,
       daysInfected: 0, // Track how many rounds they've been infected
       incubationPeriod: 0, // The incubation period (random value between 1 and 2)
       quarantinePeriod: 0, // The quarantine period
@@ -94,73 +95,113 @@ export const createPopulation = (size = 1600) => {
 
 
 
-const updateIndividual = (person, contact, params) => {
-  if (person.infected) {
-    person.daysInfected++;
-    if (person.daysInfected >= person.incubationPeriod) {
-      person.canInfect = true; // Now they can infect others
-    }
-    if (person.daysInfected >= person.incubationPeriod + params.quarantinePeriod) {
-      person.quarantined = true; // Quarantine the person after the incubation period + quarantine period
-    }
-    if (Math.random() * 100 < params.immunityChance) {
-      person.immune = true; // The person becomes immune
-      person.infected = false; // The person is no longer infected
-      person.canInfect = false; // The person can no longer infect others
-    }
-    console.log(`Person ${person.id} has been infected for ${person.daysInfected} days (incubation period: ${person.incubationPeriod})`);
-  }
-
-  if (contact.infected && contact.canInfect && !person.immune && !person.quarantined) {
-    if (Math.random() * 100 < params.infectionChance) {
-      if (!person.infected) {
-        person.newlyInfected = true;
-      }
+const maybeInfectPerson = (person, params) => {
+  if (Math.random() * 100 < params.infectionChance) {
+    if (!person.infected) {
       person.infected = true;
-      person.incubationPeriod = Math.floor(Math.random() * (params.incubationPeriodRange[1] - params.incubationPeriodRange[0] + 1)) + params.incubationPeriodRange[0];
-      person.daysInfected = 0; // Reset their infection timer
-      console.log(`Person ${person.id} got infected by contact with person ${contact.id}`);
+      person.newlyInfected = true;
     }
   }
-};
+}
 
 export const updatePopulation = (population, params) => {
-  population = shufflePopulation(population);
-
-  for (let i = 0; i < population.length; i++) {
-    let p = population[i];
-    let contact = population[(i + 1) % population.length];
-    updateIndividual(p, contact, params);
+  // First, no one is newly infected any more...
+  for (let p of population) {
+    p.newlyInfected = false;
   }
-  console.log("Population updated:", population);
+  const shuffledPopulation = shufflePopulation(population).filter(p => !p.quarantined);
+  // Now that we've shuffled, let's move through the population by two's
+  for (let i = 0; i < shuffledPopulation.length - 1; i += 2) {
+    let personA = shuffledPopulation[i];
+    let personB = shuffledPopulation[i + 1];
+
+    // let's have them meet at person A's spot...        
+    // Check if we're at the edge...
+    if (personA.x < 1) {
+      personA.x += Math.ceil(Math.random() * 5)
+    }
+    if (personA.x > 99) {
+      personA.x -= Math.ceil(Math.random() * 5)
+    }
+    // Now move personA over slightly to make room
+    personA.x -= 1; // person A moves over...
+    // personB stands next to them :-)
+    personB.x = personA.x + 2; // person B moves over...
+    personB.y = personA.y;
+    // Keep track of partners for nudging...
+    personA.partner = personB;
+    personB.partner = personA;
+
+    // Now let's see if they infect each other
+    if (personA.canInfect && !personB.infected && !personB.immune) {
+      maybeInfectPerson(personB, params);
+    }
+    if (personB.canInfect && !personA.infected && !personA.immune) {
+      maybeInfectPerson(personA, params);
+    }
+  }
+
+  // Update infection status and quarantine/immune status
+  for (let p of population) {
+    if (p.infected) {
+      p.daysInfected++;
+      if (p.daysInfected >= p.incubationPeriod) {
+        p.canInfect = true;
+      }
+      if (p.daysInfected >= p.incubationPeriod + params.quarantinePeriod) {
+        if (Math.random() * 100 < params.quarantineChance) {
+          p.quarantined = true;
+        }
+      }
+      if (Math.random() * 100 < params.immunityChance) {
+        p.immune = true;
+        p.infected = false;
+        p.canInfect = false;
+        p.quarantined = false;
+        p.daysInfected = 0;
+      }
+    }
+  }
+
+  // We return the original population (order unchanged)
   return population;
 };
 
 export const trackedStats = [
   { label: "Total Infected", value: "infected" },
+  { label: "New Infections", value: "newlyInfected" },
   { label: "Total Immune", value: "immune" },
   { label: "Total Quarantined", value: "quarantined" },
 ];
 
 export const computeStatistics = (population, round) => {
   let infected = 0;
+  let newlyInfected = 0;
   let immune = 0;
   let quarantined = 0;
 
   for (let p of population) {
     if (p.infected) {
-      infected += 1;
+      infected++;
+    }
+    if (p.newlyInfected) {
+      newlyInfected++;
     }
     if (p.immune) {
-      immune += 1;
+      immune++;
     }
     if (p.quarantined) {
-      quarantined += 1;
+      quarantined++;
     }
   }
-  const stats = { round, infected, immune, quarantined };
-  console.log("Statistics computed:", stats);
-  return stats;
+
+  return {
+    round,
+    infected,
+    newlyInfected,
+    immune,
+    quarantined,
+  };
 };
 
 const runSimulation = (rounds = 10) => {
